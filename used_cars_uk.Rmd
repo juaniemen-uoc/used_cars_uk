@@ -1,0 +1,96 @@
+---
+title: "Análisis - Compra-venta de coches usados en UK"
+author: "Marta Gómez / Juan Fco Nieto"
+date: "12/17/2021"
+output:
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+  word_document: default
+  pdf_document:
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval= TRUE, echo = TRUE)
+```
+
+##### Cargar librerías
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# https://cran.r-project.org/web/packages/ggplot2/index.html
+if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
+# https://cran.r-project.org/web/packages/dplyr/index.html
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+# Comprobación de media winsor
+if (!require('skimr')) install.packages('skimr'); library('skimr')
+```
+
+##### Lectura del fichero y preparación de los datos
+
+```{r}
+used_cars <- read.csv('aprox100KUsedCars.csv', stringsAsFactors = TRUE)
+
+sample_n(used_cars,10)  %>% knitr::kable() 
+
+sk <- skim(used_cars) 
+
+```
+
+# Descripción del dataset
+
+## Propósito
+
+Nos encontramos con un dataset con con 99187 filas y 10 columnas que representan 99187 ofertas en portales de compraventa de coches usados en UK. Este dataset ha sido UK creado en Julio 2020 por el usuario 'Aditya' (https://www.kaggle.com/adityadesai13) a través de web scraping.
+
+El dataset está orientado a crear un modelo de coches usados para hacer predicciones sobre la variable target "price", interpretándose como un análisis del precio de mercado.
+
+Citando al usuario:
+
+_"I collected the data to make a tool to predict how much my friend should sell his old car for compared to other stuff on the market, and then just extended the data set. Then made a more general car value regression model."_
+
+El usuario hizo el dataset para averiguar el precio de mercado de un coche en concreto mediante regresión lineal.
+
+## Descripción de las variables
+
+Entre las 10 variables del dataset podemos encontrar:
+
+### Variables categóricas
+
+  * manufacturer: Fabricante del automóvil. Variable categórica nominal con 9 categorías diferentes.
+  * model: Modelo del automóvil. Variable categórica nominal con 195 categorías diferentes.
+  * transmission: Tipo de transmisión. Variable categórica nominal con 4 categorías. Transmisión manual, automática, semiautomática y otras.
+  * fuelType: Tipo de combustible. Variable categórica nominal con 5 categorias. Diesel, eléctrico, híbrido, gasolina y otros.
+  
+```{r}
+sk %>% yank('factor') %>% select(c(skim_variable, n_unique, n_missing)) %>% rename(Variable=skim_variable, Niveles=n_unique, "Valores nulos"=n_missing)  %>% knitr::kable()
+```
+
+### Variables numéricas
+
+  * year: Año de matriculación del coche. Variable numérica discreta.
+  * price:	Precio en Libras que se colocó en el portal de compraventa a fecha Julio 2020. Variable numérica continua.
+  * mileage:	Millaje. Millas que el coche ha recorrido desde su puesta en funcionamiento. (En España utilizamos Kilometraje, porque medimos esta distancia en kilómetros). Variable numérica continua
+  * tax:  Impuesto de circulación (en Libras). Dependiendo de los años del vehículo, emisión de gases (sobre todo) y otros factores este impuesto varía. Variable numérica continua
+  * mpg:  Consumo de combutible del vehículo en millas por galon. Variable numérica continua
+  * engineSize: Tamaño del motor en litros. Variable numérica continua.
+
+```{r}
+sk %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, n_missing)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75, "Valores Nulos"=n_missing)  %>% knitr::kable(digits=3, scientific = FALSE)
+```
+
+Como podemos observar tanto en las variables categóricas como numéricas no hay valores vacios, no quiere decir que la consistencia de los valores sea total. Esto está sujeto a más pruebas, ejemplo: una medida distinta a 0 litros de capacidad de motor tendría sentido para un vehículo diesel, gasolina o híbrido pero no eléctrico.
+
+Por otra parte para el análisis, para hacerlo más completo cabe hacer comparaciones binomiales planteando hipótesis con nuevas variables como "Alta cilindrada/Baja cilindrada", "Alto consumo/Bajo consumo", "Eléctrico/Combustibles fósiles".
+
+# Integración y selección de los datos de interés a analizar.
+
+En cuanto a la integración, este dataset proviene de una única fuente, pero de múltiples ficheros que han sido mergeados tal como se expresa en el README del proyecto con un script de Ruby.
+
+

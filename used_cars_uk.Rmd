@@ -3,16 +3,16 @@ title: "Análisis - Compra-venta de coches usados en UK"
 author: "Marta Gómez / Juan Fco Nieto"
 date: "12/17/2021"
 output:
+  pdf_document:
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+  word_document: default
   html_document:
     highlight: default
     number_sections: yes
     theme: cosmo
-    toc: yes
-    toc_depth: 2
-  word_document: default
-  pdf_document:
-    highlight: zenburn
-    number_sections: yes
     toc: yes
     toc_depth: 2
 ---
@@ -27,6 +27,8 @@ knitr::opts_chunk$set(eval= TRUE, echo = TRUE)
 if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
 # https://cran.r-project.org/web/packages/dplyr/index.html
 if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+if (!require('tidyr')) install.packages('tidyr'); library('tidyr')
 
 # Comprobación de media winsor
 if (!require('skimr')) install.packages('skimr'); library('skimr')
@@ -57,6 +59,12 @@ _"I collected the data to make a tool to predict how much my friend should sell 
 
 El usuario hizo el dataset para averiguar el precio de mercado de un coche en concreto mediante regresión lineal.
 
+
+
+# Integración y selección de los datos de interés a analizar.
+
+En cuanto a la integración, este dataset proviene de una única fuente, pero de múltiples ficheros que han sido mergeados tal como se expresa en el README del proyecto con un script de Ruby.
+
 ## Descripción de las variables
 
 Entre las 10 variables del dataset podemos encontrar:
@@ -69,7 +77,7 @@ Entre las 10 variables del dataset podemos encontrar:
   * fuelType: Tipo de combustible. Variable categórica nominal con 5 categorias. Diesel, eléctrico, híbrido, gasolina y otros.
   
 ```{r}
-sk %>% yank('factor') %>% select(c(skim_variable, n_unique, n_missing)) %>% rename(Variable=skim_variable, Niveles=n_unique, "Valores nulos"=n_missing)  %>% knitr::kable()
+sk %>% yank('factor') %>% select(c(skim_variable, n_unique)) %>% rename(Variable=skim_variable, Niveles=n_unique)  %>% knitr::kable()
 ```
 
 ### Variables numéricas
@@ -82,15 +90,158 @@ sk %>% yank('factor') %>% select(c(skim_variable, n_unique, n_missing)) %>% rena
   * engineSize: Tamaño del motor en litros. Variable numérica continua.
 
 ```{r}
-sk %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, n_missing)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75, "Valores Nulos"=n_missing)  %>% knitr::kable(digits=3, scientific = FALSE)
+sk %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, p0, p100)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75, "Mínimo"=p0, "Máximo"=p100)  %>% knitr::kable(digits=3, scientific = FALSE)
 ```
 
 Como podemos observar tanto en las variables categóricas como numéricas no hay valores vacios, no quiere decir que la consistencia de los valores sea total. Esto está sujeto a más pruebas, ejemplo: una medida distinta a 0 litros de capacidad de motor tendría sentido para un vehículo diesel, gasolina o híbrido pero no eléctrico.
 
 Por otra parte para el análisis, para hacerlo más completo cabe hacer comparaciones binomiales planteando hipótesis con nuevas variables como "Alta cilindrada/Baja cilindrada", "Alto consumo/Bajo consumo", "Eléctrico/Combustibles fósiles".
 
-# Integración y selección de los datos de interés a analizar.
+# Limpieza de los datos
 
-En cuanto a la integración, este dataset proviene de una única fuente, pero de múltiples ficheros que han sido mergeados tal como se expresa en el README del proyecto con un script de Ruby.
+## Análisis de valores nulos
+
+A continuación se muestra la no existencia de valores nulos en el data set:
+
+```{r}
+is_blank <-  function(x){
+  return (any(x=="") || anyNA(x))
+}
+used_cars %>% summarise_all(.funs=c('is_blank'), )
+```
+
+
+
+## Análisis de valores atípicos
+
+```{r}
+vars <- c("year", "price", "mileage", "tax", "mpg", "engineSize")
+used_cars %>% select(vars) %>% pivot_longer(cols=vars, values_drop_na = TRUE) %>% ggplot(.) + facet_wrap(~name, scales = "free") + geom_boxplot(aes(y=value, fill=name))
+```
+Como podemos ver todas las variables tienen valores atípicos superiores y solo algunas inferiores. Y es por eso que nos deberíamos preguntar que hacer con esto valores, analicemos cada caso.
+
+### Identificación y tratamiento de outliers
+
+```{r}
+get_outliers <- function(x){
+  q1 = quantile(x, c(0.25))
+  q3 = quantile(x, c(0.75))
+  iqr = q3-q1
+  result = sapply(x, function(y){
+    if(y < q1 - 1.5*iqr){
+      y
+    }else if(y > q3+1.5*iqr){
+      y
+    }else{
+      NA
+    }
+  }
+  )
+  return(list(result, q1 - 1.5*iqr, q3+1.5*iqr))
+}
+```
+
+Con la presente función veremos todos los outliers de las distintas variables:
+
+```{r}
+final <- list()
+outliers_analysis <- used_cars %>% select(vars) %>% sapply(., get_outliers)
+for(i in vars){
+  ej <- na.omit(outliers_analysis[,i][[1]])
+  
+  final <- cbind(final, c(paste(sample(ej, 3), sep=" ", collapse=" / "),  outliers_analysis[,i][[2]], outliers_analysis[,i][[3]], length(ej) ))
+}
+
+colnames(final) = vars
+rownames(final) = c("Ejemplos", "Mínimo", "Máximo", "Conteo")
+data.frame(final) %>% knitr::kable()
+```
+
+
+Como podemos ver a parte de outliers podemos ver inconsistencias en las distintas variables de nuestro dataset:
+
+* Year: El año de matriculación no puede ser superior al año de la recogida de los datos (Julio 2010), por seguridad solo se aceptarán valores inferiores o iguales a 2020. Como los coches inferiores o iguales a 2011 son minoritarios y pueden sesgar nuestros análisis también los vamos a retirar.
+
+```{r}
+original_used_cars <- used_cars
+used_cars <- used_cars %>% filter(!(year < 2011.5 | year > 2019))
+```
+
+Hemos reducido 6202 filas. El total de filas ahora es `r nrow(used_cars)`.
+
+* Price: No podemos aceptar que haya precios negativos en nuestro dataset. Tampoco vamos a trabajar con valores atípicos en cuanto a precios puesto que pueden sesgar nuestro estudio alterando medidas de tendencia central y dispersión. Eliminamos outliers y precios inferiores a 0
+
+```{r}
+used_cars <- used_cars %>% filter(!(price <= 0 | price > 37176.5))
+```
+
+El total de filas ahora es 90076, se han elimina 2909.
+
+Podríamos imputar este valor, con kNN por ejemplo, pero dado que es nuestra variable principal de estudio vamos a llevarnos los mejores valores a la etapa de análisis.
+
+* Mileage: de igual manera no podemos aceptar mileage negativo por ello eliminaremos de las negativas y los valores atípicos.
+
+```{r}
+used_cars <- used_cars %>% filter(!(mileage <= 0 | mileage > 69710))
+```
+
+El total de filas ahora es 87251, se han eliminado 2825.
+
+
+* Tax: podemos entender que la relacion de impuestos no es lineal y si está estratificada no corresponde el presente análisis de outliers. Veamos un histograma:
+
+```{r, warning= FALSE}
+ggplot(used_cars) + geom_histogram(aes(tax))
+```
+
+Vemos que hay bastante volumen de gente que paga menos de 50 por lo que podemos pensar que no tiene por qué ser un error, en cambio por la parte superior, si es muy raro que se pague por encima de 200. Eliminaremos esta banda, para evitar sesgos.
+
+```{r}
+used_cars <- used_cars %>% filter(!(tax <= 0 | tax > 200))
+```
+
+El total de filas ahora es 79216, se han eliminado 8035.
+
+
+* Mpg: debemos tener en cuenta que nuestro datasets contiene tanto coches híbridos como eléctricos por lo que habrá que mantener los datos cuyo mpg sea 0 o bajo puesto que hay que tener en cuenta estas categorías. Se podría hacer una manipulación distinta de los outliers para los diferentes segmentos de fuelType pero para no aumentar complejidad la mantendremos tal como está.
+
+
+* engineSize: de igual manera un motor eléctrico deberá tener volumen 0, otro sería considerado una inconsistencia. 
+
+```{r, warning= FALSE}
+ggplot(used_cars) + geom_histogram(aes(engineSize))
+```
+
+Como podemos ver el valor de 0 es muy muy bajo pues tan solo hay 6 vehículos eléctricos que finalmente eliminaremos dado el bajo volumen, no podemos hacer predicciones ni análisis con un volumen tan bajo. Por lo que finalmente eliminaremos outliers superiores volumen de motor superior a 3.2 y 0.
+
+```{r}
+used_cars <- used_cars %>% filter(!(engineSize <= 0 | engineSize > 3.2))
+```
+
+Como hemos decidido que no vamos a tomar los vehículos eléctricos por su baja frecuencia eliminaremos también los outliers inferiores de mpg, ya que si ploteamos su histograma tiene sentido:
+
+```{r}
+ggplot(used_cars) + geom_histogram(aes(mpg)) + geom_vline(aes(xintercept=23.55, color="red")) + geom_vline(aes(xintercept=86.35, color="red"))
+used_cars <- used_cars %>% filter(!(mpg <= 23.55 | mpg > 86.35))
+```
+
+Finalmente tras el análisis de outliers el conjunto de datos numérico que tenemos tiene unas estadísticas:
+
+```{r}
+sk2 <- skim(used_cars)
+sk2 %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, p0, p100)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75, "Mínimo"=p0, "Máximo"=p100)  %>% knitr::kable(digits=3, scientific = FALSE)
+```
+
+Con una dimension de 78728 filas por 10 columnas, donde se han eliminado 20459 filas.
+
+## Inconsistencias del dominio del problema
+
+Las principales incosistencias entre variables podían ocurrir entre los fuelType="Electric" y los atributos referentes a un motor que utiliza combustible en lugar de ser alimentado por una batería. (mpg/engineSize).
+
+También, como hemos visto, el año de matriculación no puede ser superior a la fecha de scrapping, incluso hay fechas superiores a la fecha actual.
+
+
+
+
 
 

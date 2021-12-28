@@ -3,16 +3,16 @@ title: "Análisis - Compra-venta de coches usados en UK"
 author: "Marta Gómez / Juan Fco Nieto"
 date: "12/17/2021"
 output:
-  pdf_document:
-    highlight: zenburn
-    number_sections: yes
-    toc: yes
-    toc_depth: 2
-  word_document: default
   html_document:
     highlight: default
     number_sections: yes
     theme: cosmo
+    toc: yes
+    toc_depth: 2
+  word_document: default
+  pdf_document:
+    highlight: zenburn
+    number_sections: yes
     toc: yes
     toc_depth: 2
 ---
@@ -239,6 +239,34 @@ Con una dimension de 78728 filas por 10 columnas, donde se han eliminado 20459 f
 Las principales incosistencias entre variables podían ocurrir entre los fuelType="Electric" y los atributos referentes a un motor que utiliza combustible en lugar de ser alimentado por una batería. (mpg/engineSize).
 
 También, como hemos visto, el año de matriculación no puede ser superior a la fecha de scrapping, incluso hay fechas superiores a la fecha actual.
+
+
+En cuanto aL tratamiento de variables cualitativas dado que hay variables que han sido eliminadas debemos reformular el dataset para eliminar los valores que no se usan de los niveles de los factores.
+
+```{r}
+used_cars[] <- lapply(used_cars, function(x) if(is.factor(x)) factor(x) else x)
+
+sk3 <- skim(used_cars)
+sk3 %>% yank('factor') %>% select(c(skim_variable, n_unique, top_counts)) %>% rename(Variable=skim_variable, Niveles=n_unique, Top=top_counts)  %>% knitr::kable()
+```
+
+Cabe a interpretación si nos interesa mantener valores como "Others" para transmission (6 ocurrencias) y para fuelType (140) ya que más que aportar valor podrían introducir incertidumbre en según que análisis. Por otra parte podríamos considerar acotar el análisis a coches con gasolina y diésel dado que el volumen de coches híbridos es bajo (tan sólo el 3.1% de los coches de la muestra).
+
+Haremos únicamente la eliminación de "Other"s:
+```{r}
+used_cars <- used_cars %>% filter(!(transmission=="Other" | fuelType=="Other"))
+
+used_cars[] <- lapply(used_cars, function(x) if(is.factor(x)) factor(x) else x)
+
+sk3 <- skim(used_cars)
+sk3 %>% yank('factor') %>% select(c(skim_variable, n_unique, top_counts)) %>% rename(Variable=skim_variable, Niveles=n_unique, Top=top_counts)  %>% knitr::kable()
+```
+
+Las dimensiones finales de nuestro dataset son 78582 filas x 10 columnas.
+
+
+Como tónica general se ha procedido siempre a la eliminación de valores extremos, tras un análisis concienzudo de las variables en contexto del dominio del problema, debido a que contábamos con un número amplio de registros en nuestro dataset. Si hubiera sido más reducido quizás tendríamos que pensar en buscar la manera de no eliminar dimensionalidad si no imputar estos valores por media, mediana, clasificadociones, regresiones, etc.
+
 
 
 

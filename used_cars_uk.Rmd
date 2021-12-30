@@ -3,16 +3,16 @@ title: "Análisis - Compra-venta de coches usados en UK"
 author: "Marta Gómez / Juan Fco Nieto"
 date: "12/17/2021"
 output:
+  pdf_document:
+    highlight: zenburn
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+  word_document: default
   html_document:
     highlight: default
     number_sections: yes
     theme: cosmo
-    toc: yes
-    toc_depth: 2
-  word_document: default
-  pdf_document:
-    highlight: zenburn
-    number_sections: yes
     toc: yes
     toc_depth: 2
 ---
@@ -208,7 +208,7 @@ nrow(used_cars_neg_mil)
 
 ```{r}
 # Comprabación del tipo de coche con tamano de EngineSize =0
-used_cars <- used_cars %>% filter(engine != 0.0 | (engineSize == 0.0 & fuelType == "Electric"))
+used_cars <- used_cars %>% filter(engineSize != 0.0 | (engineSize == 0.0 & fuelType == "Electric"))
 ```
 
 
@@ -267,9 +267,63 @@ used_cars %>% select(vars) %>% pivot_longer(cols=vars, values_drop_na = TRUE) %>
 4. En función de los resultados anteriores seleccionamos un modelo y comparamos:
 4.1. El impacto del tipo de transmisión (manual vs. automática) en el precio, kilometraje e impuesto de matriculación.
 
+# Análisis. Caso práctico compra-venta
+
+Somos una empresa que se dedica a hacer negocio comprando coches baratos, arreglándolos y volviéndolos a vender más caros. Queremos saber coches del conjunto de datos se venden al menos un 20% debajo de su precio de mercado ("chollos") para poder comprarlos y revenderlos.
+
+Para ello vamos a modelar el "mercado de compraventa" mediante un modelo de regresión lineal. Para ello utilizaremos la función "lm" la cual internamente transformará todas las clases de nuestras variables cualitativas en variables dicotómicas para poder obtener el valor estimado como la combinación lineal de todas las variables.
+
+A continuación vemos los coeficientes:
+```{r}
+used_cars[] <- lapply(used_cars, function(x) if(is.factor(x)) factor(x) else x)
+lm_model <- lm(price~., used_cars)
+lm_model$coefficients
+```
+
+* Como podemos analizar por manufacturer los coches Mercedes "manufacturermerc" son más caros ("añaden" 1309€ a la estimación final) y los Toyota son más baratos ("restan" 9187€ a la estimación final).
+
+* En cuanto a modelos por ejemplo Audi RS6 altera al alza el precio sumándo 20120€ al precio.
+
+* En cuanto a la transmision vemos que los Manuales son más baratos por lo general que los Semi-Auto.
+
+* Y los coches híbridos son más caros que los de gasolina y diesel.
+
+* Al ser más nuevo, el precio es mayor.
+
+* Mientras más mayor es son las tasas el coche suele ser más barato (coches antigüos, contaminan más, mayor tasa)
+
+* Al tener mayor "kilometraje" el precio es menor.
+
+* El tamaño del motor determina positivamente el precio del coche.
+
+Veamos también la correlación de las variables numéricas por si tuvieramos que eliminar alguna del modelo por ser redundante:
+```{r}
+matriz_correl <- cor(used_cars %>% select(c("year","mileage","tax","mpg","engineSize")))
+corrplot::corrplot(matriz_correl, method="number")
+```
+Vemos que "mileage" y "year" están correlacionadas inversamente, mientras más nuevo el coche, menor es el kilometraje. Igual sucede con el consumo y las tasas, mientras mayor distancia recorre con menos combustible, menor es la tasa (menor consumo, menor tasa). A pesar de todo no hablamos de correlaciones muy altas. Por lo que podemos aceptar el modelo.
+
+Veamos la calidad de nuestro modelo mediante el RMSE (raíz de suma de minimos cuadrados) para tenerlo el error en unidades de precio:
+
+```{r}
+sqrt(mean(lm_model$residuals^2))
+```
+
+Vemos que no es un error despreciable y tendriamos que refinar un poco más nuestro modelo. Con el presente modelo haremos responderemos a la pregunta anterior ¿Cuáles son los chollos del conjunto, coches el 20% por debajo del precio de mercado?
+
+```{r}
+mean((lm_model$fitted.values-(used_cars$price*1.2)) > 0)
+```
+Tenemos que el ~14% está al menos un 20% por debajo del mercado. Por ejemplo (un sampleo de 10):
+
+```{r}
+used_cars[(lm_model$fitted.values-(used_cars$price*1.2)) > 0,] %>% sample_n(., 10) %>% knitr::kable()
+```
+
+
+
 
 * 2. Modelo de regresión logistica para predecir el precio de un coche en función de sus características.
-
 
 
 ```{r}
@@ -331,10 +385,10 @@ plot(used_cars$fuelType, used_cars$tax)
 
 
 
-## Comprobación de la normalidad y homogeneidad de la varianza.
+-### Comprobación de la normalidad y homogeneidad de la varianza.
 
 
-## Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc.Aplicar al menos tres métodos de análisis diferentes.
+-### Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc.Aplicar al menos tres métodos de análisis diferentes.
 
 
 

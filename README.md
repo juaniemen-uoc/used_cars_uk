@@ -1,4 +1,9 @@
-# Introducción
+# Integrantes
+Juan Francisco Nieto Mendoza
+Marta Gómez Galán
+
+
+# Descripción del proyecto
 
 El presente proyecto tiene como objetivo analizar el dataset de coches usados en UK creado en Julio 2020 por el usuario 'Aditya' (https://www.kaggle.com/adityadesai13) a través de web scraping de portales de compraventa británicos.
 
@@ -203,6 +208,10 @@ Tanto en las variables categóricas como numéricas no hay valores vacios, no qu
 </tr>
 </tbody>
 </table>
+
+# Contenido
+Entre los ficheros se incluye la carpeta integration con los ficheros originales y el script para la generación del fichero final en donde se realiza el análisis.
+Además incluimos el dataset (aprox100KUsedCars.csv) generado tras la integración, el ficheros markdown (used_cars_uk.Rmd) con el código en R utilizado para el análisis propuesto y el render used_cars_uk.html y used_cars_uk.pdf.
 
 
 

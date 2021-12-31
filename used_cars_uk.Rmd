@@ -60,17 +60,17 @@ En la siguiente tabla se muestra un ejemplo del tipo de datos.
 
 ```{r}
 # Carga de los datos
-used_cars <- read.csv("aprox100KUsedCars.csv", stringsAsFactors = TRUE)
+used_cars <- read.csv("/Users/margom/OneDrive - KI.SE/Mac/Documents/Gomez_Marta/UOC-Data Science/Tipologia y Ciclo de Vida de los Datos/Practica 2 (PEC4)/aprox100KUsedCars.csv", stringsAsFactors = TRUE)
 
 sample_n(used_cars,10)  %>% knitr::kable() 
 
 ```
-Tabla 1. Ejemplo del tipo de datos almacenada en el dataset.
+
+* Tabla 1. Ejemplo del tipo de datos almacenada en el dataset.
 
 ## Descripción de las variables
 
 A continuación mostramos un resumen del tipo de variables presentes en el dataset que constituyen los datos de interés a analizar en el que podemos observar la presencia de dos tipos principales de variables: categóricas (factor) y numéricas (integer o numeric). 
-
 
 ```{r}
 # Tabla resumen del tipo de variables que conforman el dataset
@@ -78,7 +78,8 @@ tb_var <- sapply(used_cars, class)
 kable(data.frame(variables = names(tb_var), clase = as.vector(tb_var)))
 
 ```
-Tabla 2. Tipo de variables
+
+* Tabla 2. Tipo de variables
 
 ### Variables categóricas (factor)
 
@@ -91,7 +92,8 @@ Tabla 2. Tipo de variables
 sk <- skim(used_cars) 
 sk %>% yank('factor') %>% select(c(skim_variable, n_unique)) %>% rename(Variable=skim_variable, Niveles=n_unique)  %>% knitr::kable()
 ```
-Tabla 3. Resumen de las variables categóricas y sus posibles valores
+
+* Tabla 3. Resumen de las variables categóricas y sus posibles valores
 
 ### Variables numéricas
 
@@ -106,7 +108,8 @@ Tabla 3. Resumen de las variables categóricas y sus posibles valores
 ```{r}
 sk %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75)  %>% knitr::kable(digits=3, scientific = FALSE)
 ```
-Tabla 4. Análisis descriptivo de las variables numéricas
+
+* Tabla 4. Análisis descriptivo de las variables numéricas
 
 # Limpieza de los datos
 
@@ -132,6 +135,8 @@ vars <- c("year", "price", "mileage", "tax", "mpg", "engineSize")
 
 used_cars %>% select(vars) %>% pivot_longer(cols=vars, values_drop_na = TRUE) %>% ggplot(.) + facet_wrap(~name, scales = "free") + geom_boxplot(aes(y=value, fill=name))
 ```
+
+* Figura 1. Gráfico mostrando los valores extremos de las variables numéricas
 
 ### Identificación y tratamiento de outliers
 Un análisis más profundo nos permite identificar aquellos valores extremos y valorar su tratamiento en función de la información almacenada en dicha varíable.
@@ -175,7 +180,9 @@ rownames(final) = c("Ejemplos", "Inferior", "Superior", "Número total")
 data.frame(final) %>% knitr::kable()
 ```
 
-A continuación detallamos el tratamiento de los valores extremos en función del tipo de variable asícomo las inconsistencias encontradas tras su análisis.
+* Tabla 5. Valores extremos.
+
+A continuación detallamos el tratamiento de los valores extremos en función del tipo de variable así como las inconsistencias encontradas tras su análisis.
 
 * Year: El año de matriculación no puede ser superior al año de la recogida de los datos (Julio 2020), por lo que eliminaremos del dataset aquellos coches con fecha de matriculación superior al 2020. Por otra parte, aunque el análisis muestra como valores extremos los coches matriculados antes del 2011, consideramos estos coches minoritarios pero válidos y los mantendremos en el dataset.
 
@@ -183,6 +190,7 @@ A continuación detallamos el tratamiento de los valores extremos en función de
 # Eliminamos los coches matriculados más tarde del 2020
 original_used_cars <- used_cars
 used_cars <- used_cars %>% filter(year <= 2020)
+
 ```
 
 * Price: El análisis de valores extremos pone en evidencia una gran dispersión entre los distintos precios de los coches, con un rango inferior negativo. Dado que un valor negativo en el precio sería un claro error lo comprobamos y observamos que no existen. Sin embargo vemos que hay un porcentaje minoritario de coches, probablemente de alta gama, con un precio muy elevado sobre la media que en principio son reconocidos como valores extremos. Sin embargo, los consideramos válidos. 
@@ -193,18 +201,23 @@ used_cars_neg_price <- used_cars %>% filter(price <= 0)
 nrow(used_cars_neg_price)
 ```
 
-* Mileage: de igual manera no podemos aceptar kilometraje negativo, por lo que lo comprobamos y observamos que no existen. Al igual que en la variable price, hay una gran dispersión en esta variable.Dado que se trata de compra-venta de coches de segunda mano los consideramos válidos y no los eliminamos.
+* Mileage: de igual manera no podemos aceptar kilometraje negativo, por lo que lo comprobamos y observamos que no existen. Al igual que en la variable price, hay una gran dispersión en esta variable. Dado que se trata de compra-venta de coches de segunda mano asumimos una gran variedad de ofertas de coches y los consideramos válidos.
 
 ```{r}
 used_cars_neg_mil <- used_cars %>% filter(mileage <= 0)
 nrow(used_cars_neg_mil)
 ```
 
-* Tax: El diagrama de barras muestra una clara estratifiación en los impuestos en el que observamos tres tramos. Consideramos válidos los valores extremos mostrados en el análisis. 
+* Tax: El diagrama de barras muestra una clara estratifiación en los impuestos en el que observamos tres tramos. Consideramos válidos los valores extremos mostrados en el análisis. Sin embargo eliminamos los valores iguales a 0.
+
+```{r}
+used_cars <- used_cars %>% filter(tax > 0)
+```
+
 
 * Mpg: debemos tener en cuenta que nuestro dataset contiene tanto coches híbridos como eléctricos por lo que habrá que mantener los datos cuyo mpg sea bajo o 0. Se podría hacer una manipulación distinta de los outliers para los diferentes segmentos de fuelType pero para no aumentar complejidad la mantendremos tal como está.
 
-* engineSize: de igual manera un motor eléctrico deberá tener volumen 0, otro sería considerado una inconsistencia. Comprobamos por tanto que aquellos coches con volumen 0 sean eléctricos en caso contrarío eliminaremos estas filas.
+* engineSize: de igual manera un motor eléctrico deberá tener volumen 0, otro sería considerado una inconsistencia. Comprobamos por tanto que aquellos coches con volumen 0 sean eléctricos.
 
 ```{r}
 # Comprabación del tipo de coche con tamano de EngineSize =0
@@ -220,52 +233,315 @@ sk2 %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, p0,
 
 ```
 
+* Tabla 5. Estadística descriptiva de las variables numéricas tras la limpieza
+
 # Análisis de los datos.
-En esta sección vamos a detallar ejemplos a preguntas concretas que podemos resolver con nuestro dataset.
-Para ello realizamos una selección previa de los grupos en nuestro dataset.
+Una vez realizada la integración y limpieza de los datos vamos a proceder al análisis de los datos. Para ello vamos a realizar dos análisis completos que usaremos como ejemplos de tipo de consultas que se pueden resolver con este dataset.
 
+En el primer análisis mostramos una serie de pasos que tienen como finalidad ayudar en la toma de decisión de un cliente que está interesado en comprarse un coche con una antiguedad igual o inferior a 5 anos junto con otros requisitos que detallaremos más adelante 
 
-## Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).
+En el segundo análisis haremos un caso práctico de compra-venta por parte de un vendedor en busca de "chollos".
+
 
 * 1. Análisis para la toma de decisión de la compra de un coche con 5 anos de antiguedad. 
 
-Creamos una función que nos devuelva el modelo más frecuente de coche por fabricante.
+Un cliente quiere comprarse un coche de segunda mano. Para ello nos contacta para que le hagamos un análisis del mercado de segunda mano. Sus principales requisitos son 1) que sea un coche con una antiguedad igual o inferior a 5 anos, 2) con un precio de hasta 6000 £, 3) que tenga muchas opciones de compra, es decir, que si se decide por un modelo concreto tenga donde elegir y 4) con una buena relación calidad-precio. El fabricante y/o modelo de coche, tipo de transmisión y tipo de combustible no es en principio importante para el cliente siempre y cuando cumpla con los requisitos anteriores. 
+
+A continuación detallamos los pasos realizados para dicho análisis de mercado que tendrá como finalidad recomendar al cliente un coche que cumpla con sus requisitos.
+
+## Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).
+
+1. Dado que el cliente quiere tener amplia oferta de compra exploramos los 10 modelos de coches con mayor oferta y con una antigüedad igual o inferior a cinco anos y mostramos el gráfico visualmente.
 
 ```{r, warning=FALSE, message=FALSE}
+# Selección de los 10 modelos más frecuentes de coches matriculados a partir del 2015 hasta la actualidad.
 top_10_used_cars <- used_cars %>% filter(year >= 2015) %>% group_by(manufacturer, model) %>% summarize(model_count=n()) %>% arrange(-model_count) %>% .[0:10,]
 
 top_10_used_cars[,2:3] %>% ggplot(.) + geom_col(aes(model, model_count, fill=model))
 ```
 
-Una vez obtenida la información hacemos:
+* Figura 2. Modelos de coches con mayor oferta en el mercado de segunda mano en Julio 2020
 
-1. varios contraste de hipótesis (ONE-WAY ANOVA) comparando:
-1.1 precio medio de cada uno de los modelos en el ano 2015 (5 anos de antigüedad).
-1.2 impuesto de matriculación medio
-1.3 kilometraje medio
+Una vez obtenida dicha información seleccionamos los modelos en nuestro dataset original aplicando los requisitos de antigüedad y precio y mostramos el resultado mediante una serie de gráficos.
+
 
 ```{r}
-top_10_cars <- used_cars %>% filter((manufacturer %in% top_10_used_cars$manufacturer) & (model %in% top_10_used_cars$model))
+# Filtrado de los coches que cumplan los requisitos
+#top_10_cars <- used_cars %>% filter((manufacturer %in% top_10_used_cars$manufacturer) & (model %in% top_10_used_cars$model) & (year >= 2015) & (price <= 6000))
+
+top_10_cars <- used_cars %>% filter((manufacturer %in% top_10_used_cars$manufacturer) & (model %in% top_10_used_cars$model) & (year >= 2015) & (price <=20000) & (fuelType == 'Petrol'|fuelType=='Diesel') & (mileage <= 50000))
+
+
 ```
 
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(3,3))
+
+
+# 1. Gráfico que muestra el número de coches por modelo
+car_model <- top_10_cars %>% group_by(manufacturer, model) %>% summarize(model_count=n()) %>% arrange(-model_count)
+car_model[,2:3] %>% ggplot(.) + geom_col(aes(model, model_count, fill=model))
+
+# 2. Gráfico que muestra el número de coches por ano
+car_year <- top_10_cars %>% group_by(manufacturer, year) %>% summarize(year_count=n()) %>% arrange(-year_count)
+
+car_year[,2:3] %>% ggplot(.) + geom_col(aes(year, year_count, fill=year))
+
+# 3. Gráfico que muestra el número de coches por fuelType
+car_fuel <- top_10_cars %>% group_by(manufacturer, fuelType) %>% summarize(fuelType_count=n()) %>% arrange(-fuelType_count)
+
+car_fuel[,2:3] %>% ggplot(.) + geom_col(aes(fuelType, fuelType_count, fill=fuelType))
+
+# 4. Gráfico que muestra el número de coches por tipo de transmisión
+car_tras <- top_10_cars %>% group_by(manufacturer, transmission) %>% summarize(transmission_count=n()) %>% arrange(-transmission_count)
+
+car_tras[,2:3] %>% ggplot(.) + geom_col(aes(transmission, transmission_count, fill=transmission))
+
+# 5. Gráfico que muestra el número de coches por tipo de engineSize
+car_motor <- top_10_cars %>% group_by(manufacturer, engineSize) %>% summarize(engineSize_count=n()) %>% arrange(-engineSize_count)
+
+car_motor[,2:3] %>% ggplot(.) + geom_col(aes(engineSize, engineSize_count, fill=engineSize))
+
+```
+
+* Figura 3. Resumen de las características de los coches con mayor oferta en el mercado
+
 ```{r}
+# Tabla estadística descriptiva de las variables cuantitativas
+sk3 <- skim(top_10_cars) 
+sk3 %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75)) %>% rename(Variable=skim_variable, Media=mean, "Desviación Típica"=sd, "Q1"=p25, "Q2/Mediana"=p50, "Q3"=p75)  %>% knitr::kable(digits=3, scientific = FALSE)
+```
+
+* Tabla 6. Estadística descriptiva de las variable cuantitativas de los coches con mayor oferta.
+
+```{r}
+# Boxplot para cada una de las variables númericas (vars)
 vars <- c("year", "price", "mileage", "tax", "mpg", "engineSize")
 
-used_cars %>% select(vars) %>% pivot_longer(cols=vars, values_drop_na = TRUE) %>% ggplot(.) + facet_wrap(~name, scales = "free") + geom_qq(aes(sample=value, fill=name))
+top_10_cars %>% select(vars) %>% pivot_longer(cols=vars, values_drop_na = TRUE) %>% ggplot(.) + facet_wrap(~name, scales = "free") + geom_boxplot(aes(y=value, fill=name))
 ```
 
-2. Análisis de frecuencia de las características categóricas de cada uno de los modelos.
-2.1 Tipo de transmissión
-2.2 FuelType
+Figura 4. Diagrama de barras de las características de los coches con mayor oferta
 
-3. Seleccionamos tres de los modelos (los que más nos gusten) y estudiamos:
+## Comprobación de la normalidad y homogeneidad de la varianza.
 
-3.1 la evolución del precio del modelo en función del ano de matriculación. De esta manera podemos obtener una estimación del precio al que podríamos vender el coche en los anos posteriores a la compra. Regresión lineal.
+Antes de aplicar ningún análisis estadístico comprobamos la normalidad y homogeneidad de los datos. Para ello elegimos dos estrategias, una basada en la representación gráfica de las variables numéricas y la otra en el test de Lilliefors..
 
-3.2 el impacto del kilometraje en el precio del coche. 
+* 1.  Gráficos Q-Q e Histograma 
+Representamos los datos mediante un histograma y los gráficos de cuantiles teóricos (Gráficos Q-Q) y observamos que, salvo la variable "mileage" (kilometraje), todas las variables se alejan bastante de una distribución normal.
 
-4. En función de los resultados anteriores seleccionamos un modelo y comparamos:
-4.1. El impacto del tipo de transmisión (manual vs. automática) en el precio, kilometraje e impuesto de matriculación.
+
+```{r}
+par(mfrow=c(2,2))
+for(i in 1:ncol(top_10_cars)) {
+  if (is.numeric(top_10_cars[,i])){
+    qqnorm(top_10_cars[,i],main = paste("Normal Q-Q Plot for ",colnames(top_10_cars)[i]))
+    qqline(top_10_cars[,i],col="red")
+    hist(top_10_cars[,i], 
+      main=paste("Histogram for ", colnames(top_10_cars)[i]), 
+      xlab=colnames(top_10_cars)[i], freq = FALSE)
+  }
+}
+```
+
+* Figura 5. Gráficos Q-Q e Histogramas de las variables numéricas de interés
+
+* 2. Test de Lilliefors para las variables numéricas.
+
+Nuestro dataset, una vez filtrado con los requisitos del cliente tienen un total de 24466 entradas por lo que aplicamos el test de Lilliefors a cada una de las variables numéricas, el cual asume una media y varianza desconocida.
+
+El resultado es similar al observado visualmente. Todas las variables tienen un valor p (p-value) < 0.05, por lo que se rechaza la hipótesis nula y las variables no se consideran que siguen una distribución normal. 
+
+Sin embargo, aplicando el Teorema Central, asumiremos normalidad a la hora de aplicar los métodos estadísticos detallados a continuación.
+
+
+```{r}
+# Test de Lilliefors
+library("nortest")
+lillie.test(x = top_10_cars$mileage)
+lillie.test(x = top_10_cars$mpg)
+lillie.test(x = top_10_cars$tax)
+lillie.test(x = top_10_cars$price)
+lillie.test(x = top_10_cars$year)
+lillie.test(x = top_10_cars$engineSize)
+```
+
+
+## Análisis Estadístico
+
+Para ayudar a nuestro cliente a tomar una decisión vamos a aplicar una serie de test estadísticos.
+* 1. Comparación precio medio por modelo.
+
+```{r}
+# Gráfico del precio medio y la desviación estándar por modelo de coche
+ggplot(top_10_cars, aes(x=model, y=price, fill = model)) + geom_boxplot()
+
+price <- top_10_cars %>%
+  group_by(model) %>%
+  summarise_at(vars(price), list(precio_medio = mean, error = sd))
+
+```
+Del gráfico anterior observamos una gran diferencia del precio medio en función del modelo que nos permite agruparlos en tres categorias en función del precio: alto (A class, C Class), medio (Focus, Golf, Kuga) y bajo (Astra, Corsa, Fiesta, Mokka X y Polo).
+
+
+```{r}
+# Gráfico del kilometraje medio y la desviación estándar por modelo de coche
+ggplot(top_10_cars, aes(x=model, y=mileage, fill = model)) + geom_boxplot()
+
+```
+Del anterior análisis seleccionamos tres modelos (A Class, Focus, Golf) que dadas sus características creemos que le pueden interesar al comprador y estudiamos:
+
+1.  Análisis del impacto del modelo de coche sobre la media de las variables aplicando un análisis de la varianza sobre las variables precio, kilometraje y consumo medio.
+
+2. El impacto del kilometraje en el precio del coche aplicando una correlación.
+
+3. El impacto del tipo de combustible (petrol vs. diesel) en el precio y kilometraje.
+
+
+```{r}
+# Selección de tres modelos de coches
+three_cars <- c('A Class', 'Focus', 'Golf')
+final_cars <- top_10_cars %>% filter((model %in% three_cars))
+```
+
+* 1. Análisis del impacto del modelo sobre la media de las variables 1) precio, 2) kilometraje, 3) impuesto de circulación, 4) antigüedad media y 5) consumo medio:
+
+```{r}
+# Gráficos
+# 1. Precio medio
+ggplot(final_cars, aes(x=model, y=price, fill = model)) + geom_boxplot()
+# 2. kilometraje medio
+ggplot(final_cars, aes(x=model, y=mileage, fill = model)) + geom_boxplot()
+# 3. Impuesto de circulación medio
+ggplot(final_cars, aes(x=model, y=tax, fill = model)) + geom_boxplot()
+# 4. Antigüedad media
+ggplot(final_cars, aes(x=model, y=year, fill = model)) + geom_boxplot()
+# 5. Consumo medio
+ggplot(final_cars, aes(x=model, y=mpg, fill = model)) + geom_boxplot()
+```
+
+* Figura 7. Impacto del modelo en la media de las variables cuantitativas
+
+El análisis de la varianza para cada variable numérica muestra un alto grado de significancia en función del modelo.
+
+```{r}
+# 1. Cálculo de la varianza de un solo factor (ONE-WAY ANOVA) para precio
+res.aov_price <- aov(price ~ model, data = final_cars)
+# Resumen del análisis
+summary(res.aov_price)
+# Comparación multiple
+TukeyHSD(res.aov_price)
+```
+
+```{r}
+# 2. Cálculo de la varianza de un solo factor (ONE-WAY ANOVA) para mileage
+res.aov_mileage <- aov(mileage ~ model, data = final_cars)
+# Resumen del análisis
+summary(res.aov_mileage)
+# Comparación multiple
+TukeyHSD(res.aov_mileage)
+```
+
+
+```{r}
+# 5. Cálculo de la varianza de un solo factor (ONE-WAY ANOVA) para mpg
+res.aov_mpg <- aov(mpg ~ model, data = final_cars)
+# Resumen del análisis
+summary(res.aov_mpg)
+# Comparación multiple
+TukeyHSD(res.aov_mpg)
+```
+
+* 2. Impacto del kilometraje en el precio del coche en cada uno de los modelos seleccionados.
+
+En este caso estudiamos dicho impacto en cada uno de los modelos por separado. 
+
+```{r}
+# Crear un dataset por cada modelo
+A_Class <- top_10_cars %>% filter(model=='A Class')
+Golf <- top_10_cars %>% filter(model=='Golf')
+Focus <-  top_10_cars %>% filter(model=='Focus')
+```
+
+La correlación entre el kilometraje y el precio es mayor para el coche Class A (-0.65), que indica que a menor kilometraje mayor precio. Para los modelos Golf (-0.50) y Focus (-0.57) esta correlación no es tan clara.
+
+
+```{r}
+# Correlación entre el kilometraje y el precio
+# 1. A_Class
+A_Class.cor <- cor(x=A_Class$mileage, y=A_Class$price, method='pearson')
+# 2. Golf
+Golf.cor <- cor(x=Golf$mileage, y=Golf$price, method='pearson')
+# 3. Focus
+Focus.cor <- cor(x=Focus$mileage, y=Focus$price, method='pearson')
+
+A_Class.cor
+Golf.cor 
+Focus.cor 
+
+```
+
+```{r}
+# Gráficos de dispersión
+# 1. A_Class
+with(A_Class, plot(x=price, y=mileage, pch=20, col='blue',
+                 xlab='Precio', las=1,
+                 ylab='Millas'))
+
+# 2. Golf
+with(Golf, plot(x=price, y=mileage, pch=20, col='blue',
+                 xlab='Precio', las=1,
+                 ylab='Millas'))
+
+# 3. Focus
+with(Focus, plot(x=price, y=mileage, pch=20, col='blue',
+                 xlab='Precio', las=1,
+                 ylab='Millas'))
+```
+
+* Figura 8. Diagramas de dispersión entre el precio y el kilometraje
+
+Finalmente estudiamos la relación del tipo de combustible en el precio y kilometraje según el modelo.
+
+
+3. El impacto del tipo de combustible (petrol vs. diesel) en el precio y kilometraje
+
+
+```{r}
+# Gráficos 
+# 1. Precio vs tipo combustible
+ggplot(final_cars, aes(x=model, y=price, fill = fuelType)) + geom_boxplot()
+
+#2. kilometraje vs combustible
+ggplot(final_cars, aes(x=model, y=mileage, fill = fuelType)) + geom_boxplot()
+
+```
+
+* Figura 8. Precio y kilometraje en función del tipo de combustible por modelo de coche
+
+Realizamos un análisis de la varianza de dos factores (TWO-WAY ANOVA) y observamos diferencias significativas en función del modelo y del precio. Además hay una interacción entre las variables que nos indica que el precio o kilometraje en función del tipo de combustible depende del modelo.
+
+Este análisis no aporta mucha información, sin embargo los gráficos nos permiten concluir que 
+
+1. Para el Focus y Golf el precio de los coches gasolina son más baratos mientras que el clase A es lo contrario.
+
+2. El general los coches diesel tiene más kilometraje que los gasolina.
+
+
+```{r}
+# Two-way ANOVA precio en función del modelo y tipo de combustible
+res.aov <- aov(price ~ model * fuelType, data = final_cars)
+summary(res.aov)
+TukeyHSD(res.aov, which = "fuelType")
+```
+
+```{r}
+# Two-way ANOVA precio en función del modelo y tipo de transmisión
+res.aov2 <- aov(price ~ model * transmission, data = final_cars)
+summary(res.aov2)
+TukeyHSD(res.aov2, which = "transmission")
+```
 
 # Análisis. Caso práctico compra-venta
 
@@ -323,72 +599,7 @@ used_cars[(lm_model$fitted.values-(used_cars$price*1.2)) > 0,] %>% sample_n(., 1
 
 
 
-* 2. Modelo de regresión logistica para predecir el precio de un coche en función de sus características.
 
-
-```{r}
-# Diagrama de barras con el número total de coches por fabricante
-barplot(table(used_cars$manufacturer))
-```
-
-```{r}
-# Crear una función que nos devuelva el modelo más frecuente por fabricante de coche
-```
-
-* 2. Evolución del precio medio de los coches de segunda mano
-```{r}
-plot(used_cars$price, used_cars$mpg)
-```
-
-
-
-
-* 2. Clasificar los coches en función de su tamano de motor
-
-* 3. Predecir el precio de un coche en función de sus características
-
-* 4. Comparar el precio medio de distintos modelos de coches con características similares de cuatro fabricantes distintos.
-
-* 5. Comparar el precio de un mismo modelo matriculado con una diferencia de 5-10-15 anos.
-
-* 6. Estudiar el impacto del tamano del motor en el impuesto de matriculación.
-No tenemos en cuenta los coches elécrtricos (engineSize=0) y acotamos el análisis a una franga de anos de matriculación: 2015-2020.
-
-```{r}
-# Subsetting
-# Coches matriculados entre el 2015-2020
-df <- used_cars
-# No coches eléctricos
-
-```
-
-
-```{r}
-# Diagrana de puntos mostrando el impacto del tamano del motor en el impuesto de matriculación
-plot(used_cars$tax, used_cars$engineSize)
-```
-
-
-
-```{r}
-# Impuesto de matriculación en del combustible 
-plot(used_cars$fuelType, used_cars$tax)
-```
-
-
-
-
-
-
-
-
-
-
-
--### Comprobación de la normalidad y homogeneidad de la varianza.
-
-
--### Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc.Aplicar al menos tres métodos de análisis diferentes.
 
 
 

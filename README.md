@@ -1,6 +1,25 @@
 # Integrantes
-Juan Francisco Nieto Mendoza
-Marta Gómez Galán
+
+<table class="table table-condensed">
+<thead>
+<tr class="header">
+<th align="left">Integrante</th>
+<th align="right">Github</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Juan Francisco Nieto Mendoza</td>
+<td align="right">https://github.com/juaniemen</td>
+</tr>
+<tr class="even">
+<td align="left">Marta Gómez Galán</td>
+<td align="right">https://github.com/mgomezgal</td>
+</tr>
+</tbody>
+</table>
+ 
+ 
 
 
 # Descripción del proyecto

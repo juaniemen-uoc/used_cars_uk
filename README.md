@@ -213,6 +213,8 @@ Tanto en las variables categóricas como numéricas no hay valores vacios, no qu
 Entre los ficheros se incluye la carpeta integration con los ficheros originales y el script para la generación del fichero final en donde se realiza el análisis.
 Además incluimos el dataset (aprox100KUsedCars.csv) generado tras la integración, el ficheros markdown (used_cars_uk.Rmd) con el código en R utilizado para el análisis propuesto y el render used_cars_uk.html y used_cars_uk.pdf.
 
+Se adjunta en carpeta "video_ppt", el fichero PowerPoint y el video final de muestra del proyecto
+
 
 
 

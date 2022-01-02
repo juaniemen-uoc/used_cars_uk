@@ -248,20 +248,20 @@ sk2 %>% yank('numeric') %>% select(c(skim_variable, mean, sd, p25, p50, p75, p0,
 # Análisis de los datos.
 Una vez realizada la integración y limpieza de los datos vamos a proceder al análisis de los datos. Para ello vamos a realizar dos análisis completos que usaremos como ejemplos de tipo de consultas que se pueden resolver con este dataset.
 
-En el primer análisis mostramos una serie de pasos que tienen como finalidad ayudar en la toma de decisión de un cliente que está interesado en comprarse un coche con una antiguedad igual o inferior a 5 anos junto con otros requisitos que detallaremos más adelante 
+En el primer análisis mostramos una serie de pasos que tienen como finalidad ayudar en la toma de decisión de un cliente que está interesado en comprarse un coche con una antiguedad igual o inferior a 5 años junto con otros requisitos que detallaremos más adelante 
 
 En el segundo análisis realizamos un modelo de regresión lineal para identificar aquellos coches con un valor por debajo de su precio de mercado para comprarlos y revenderlos a un precio de mercado.
 
 
-* 1. Análisis para la toma de decisión de la compra de un coche con 5 anos de antiguedad. 
+* 1. Análisis para la toma de decisión de la compra de un coche con 5 años de antiguedad. 
 
-Un cliente quiere comprarse un coche de segunda mano. Para ello nos contacta para que le hagamos un análisis del mercado de segunda mano. Sus principales requisitos son 1) que sea un coche con una antiguedad igual o inferior a 5 anos, 2) con un precio de hasta 6000 £, 3) que tenga muchas opciones de compra, es decir, que si se decide por un modelo concreto tenga donde elegir y 4) con una buena relación calidad-precio. El fabricante y/o modelo de coche, tipo de transmisión y tipo de combustible no es en principio importante para el cliente siempre y cuando cumpla con los requisitos anteriores. 
+Un cliente quiere comprarse un coche de segunda mano. Para ello nos contacta para que le hagamos un análisis del mercado de segunda mano. Sus principales requisitos son 1) que sea un coche con una antiguedad igual o inferior a 5 años, 2) con un precio de hasta 6000 £, 3) que tenga muchas opciones de compra, es decir, que si se decide por un modelo concreto tenga donde elegir y 4) con una buena relación calidad-precio. El fabricante y/o modelo de coche, tipo de transmisión y tipo de combustible no es en principio importante para el cliente siempre y cuando cumpla con los requisitos anteriores. 
 
 A continuación detallamos los pasos realizados para dicho análisis de mercado que tendrá como finalidad recomendar al cliente un coche que cumpla con sus requisitos.
 
 ## Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).
 
-1. Dado que el cliente quiere tener amplia oferta de compra exploramos los 10 modelos de coches con mayor oferta y con una antigüedad igual o inferior a cinco anos y mostramos el gráfico visualmente.
+1. Dado que el cliente quiere tener amplia oferta de compra exploramos los 10 modelos de coches con mayor oferta y con una antigüedad igual o inferior a cinco años y mostramos el gráfico visualmente.
 
 ```{r, warning=FALSE, message=FALSE, out.width="50%"}
 # Selección de los 10 modelos más frecuentes de coches matriculados a partir del 2015 hasta la actualidad.
@@ -358,7 +358,7 @@ Nuestro dataset, una vez filtrado con los requisitos del cliente tienen un total
 
 El resultado es similar al observado visualmente. Todas las variables tienen un valor p (p-value) < 0.05, por lo que se rechaza la hipótesis nula y las variables no se consideran que siguen una distribución normal. 
 
-Sin embargo, aplicando el Teorema Central, asumiremos normalidad a la hora de aplicar los métodos estadísticos detallados a continuación.
+Sin embargo, aplicando el Teorema del Límite Central, asumiremos normalidad a la hora de aplicar los métodos estadísticos detallados a continuación.
 
 ```{r, include=FALSE}
 # Test de Lilliefors 
@@ -391,7 +391,7 @@ ggplot(top_10_cars, aes(x=model, y=mileage, fill = model)) + geom_boxplot()
 
 Dado que el cliente quiere un coche de confianza, del anterior análisis seleccionamos tres modelos (A Class, Focus, Golf) que dadas sus características creemos que le pueden interesar al comprador y estudiamos:
 
-* 1.  Análisis del impacto del modelo de coche sobre la media de las variables aplicando un análisis de la varianza sobre las variables precio, kilometraje y consumo medio.
+* 1.  Análisis del impacto del modelo de coche sobre la mediana de las variables aplicando un análisis de la varianza sobre las variables precio, kilometraje y consumo medio.
 
 * 2. El impacto del kilometraje en el precio del coche aplicando una correlación.
 
@@ -588,7 +588,7 @@ Tenemos que el ~14% está al menos un 20% por debajo del mercado.
 mean((lm_model$fitted.values-(used_cars$price*1.2)) > 0)
 ```
 
-Sin embargo, el análisis de la calidad de nuestro modelo mediante el RMSE (raíz de suma de minimos cuadrados) muestra un error (en euros) de 3705. Un error claramente muy elevado que nis indica la necesidad de refinar nuestro modelo.
+Sin embargo, el análisis de la calidad de nuestro modelo mediante el RMSE (raíz de suma de minimos cuadrados) muestra un error (en euros) de 3705. Un error claramente muy elevado que nos indica la necesidad de refinar nuestro modelo.
 
 ```{r}
 sqrt(mean(lm_model$residuals^2))

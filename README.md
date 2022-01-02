@@ -1,6 +1,25 @@
 # Integrantes
-Juan Francisco Nieto Mendoza
-Marta Gómez Galán
+
+<table class="table table-condensed">
+<thead>
+<tr class="header">
+<th align="left">Integrante</th>
+<th align="right">Github</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Juan Francisco Nieto Mendoza</td>
+<td align="right">https://github.com/juaniemen</td>
+</tr>
+<tr class="even">
+<td align="left">Marta Gómez Galán</td>
+<td align="right">https://github.com/mgomezgal</td>
+</tr>
+</tbody>
+</table>
+ 
+ 
 
 
 # Descripción del proyecto
@@ -21,7 +40,7 @@ Los pasos para la replicación se muestran a continuación.
 
 # Integración
 
-Colocarnos en la carpeta "integration" en el presente proyecto, esta contiene el datasaset original (carpeta "archive"), posteriormente ejecutar:
+En un terminal, colocarnos en la carpeta "integration" en el presente proyecto, esta contiene el datasaset original (carpeta "archive"), posteriormente ejecutar:
 
 ```ruby integration.rb```
 
@@ -212,6 +231,8 @@ Tanto en las variables categóricas como numéricas no hay valores vacios, no qu
 # Contenido
 Entre los ficheros se incluye la carpeta integration con los ficheros originales y el script para la generación del fichero final en donde se realiza el análisis.
 Además incluimos el dataset (aprox100KUsedCars.csv) generado tras la integración, el ficheros markdown (used_cars_uk.Rmd) con el código en R utilizado para el análisis propuesto y el render used_cars_uk.html y used_cars_uk.pdf.
+
+Se adjunta en carpeta "video_ppt", el fichero PowerPoint y el video final de muestra del proyecto
 
 
 

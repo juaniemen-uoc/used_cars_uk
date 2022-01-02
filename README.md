@@ -40,7 +40,7 @@ Los pasos para la replicación se muestran a continuación.
 
 # Integración
 
-Colocarnos en la carpeta "integration" en el presente proyecto, esta contiene el datasaset original (carpeta "archive"), posteriormente ejecutar:
+En un terminal, colocarnos en la carpeta "integration" en el presente proyecto, esta contiene el datasaset original (carpeta "archive"), posteriormente ejecutar:
 
 ```ruby integration.rb```
 
